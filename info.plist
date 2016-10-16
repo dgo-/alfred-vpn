@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>bundleid</key>
+	<string>com.dgo.alfred.vpn-toggle</string>
+	<key>category</key>
+	<string>Tools</string>
+	<key>connections</key>
+	<dict>
+		<key>085D1468-49F0-4886-9D60-CCD637EB4012</key>
+		<array>
+			<dict>
+				<key>destinationuid</key>
+				<string>57172F40-D365-40D7-B7FD-48C6887C1C09</string>
+				<key>modifiers</key>
+				<integer>0</integer>
+				<key>modifiersubtext</key>
+				<string></string>
+				<key>vitoclose</key>
+				<false/>
+			</dict>
+		</array>
+	</dict>
+	<key>createdby</key>
+	<string>dgo</string>
+	<key>description</key>
+	<string>Check and toggle status of Tunnelblick and System VPN connections</string>
+	<key>disabled</key>
+	<false/>
+	<key>name</key>
+	<string>VPN Control</string>
+	<key>objects</key>
+	<array>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>concurrently</key>
+				<false/>
+				<key>escaping</key>
+				<integer>68</integer>
+				<key>script</key>
+				<string>set type to first character of "{query}"set action to second character of "{query}"set config_name to text 3 thru -1 of "{query}"if type is equal to "0" then	-- ipsec	if action is equal to "1" then		tell application "System Events"			tell current location of network preferences				set VPNservice to service config_name				connect VPNservice			end tell		end tell	else		tell application "System Events"			tell current location of network preferences				set VPNservice to service config_name				disconnect VPNservice			end tell		end tell	end ifelse	-- tunnelblick	if action is equal to "1" then		tell application "Tunnelblick" to connect (config_name)	else
+		say "disconnect"		tell application "Tunnelblick" to disconnect (config_name)	end ifend if</string>
+				<key>scriptargtype</key>
+				<integer>0</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>type</key>
+				<integer>6</integer>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.action.script</string>
+			<key>uid</key>
+			<string>57172F40-D365-40D7-B7FD-48C6887C1C09</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>config</key>
+			<dict>
+				<key>alfredfiltersresults</key>
+				<false/>
+				<key>argumenttype</key>
+				<integer>1</integer>
+				<key>escaping</key>
+				<integer>68</integer>
+				<key>keyword</key>
+				<string>vpn</string>
+				<key>queuedelaycustom</key>
+				<integer>3</integer>
+				<key>queuedelayimmediatelyinitially</key>
+				<true/>
+				<key>queuedelaymode</key>
+				<integer>0</integer>
+				<key>queuemode</key>
+				<integer>1</integer>
+				<key>runningsubtext</key>
+				<string></string>
+				<key>script</key>
+				<string>set configs to {}set Helper to (load script alias ":Helper.scpt")set query to Helper's strip("{query}")set xml_output to Helper's create_xmloutput()-- get system vpnstell application "System Events"	tell current location of network preferences		set vpns to (get name of every service whose (kind is greater than 11 and kind is less than 16))	end tellend tellrepeat with vpn in vpns	set tmp to "0" &amp; vpn	set the beginning of configs to tmpend repeat-- get tunnelblick vpnstry	tell application "Finder"		set check_tb to name of application file id "net.tunnelblick.tunnelblick"	end tellon error err_msg number err_num	set check_tb to "err_msg"end tryif check_tb is equal to "Tunnelblick.app" then	tell application "Tunnelblick"		set tunnels to (get name of configurations)	end tell	repeat with tunnel in tunnels		set tmp to "1" &amp; tunnel		set the beginning of configs to tmp	end repeatend if-- repeat with i in configs	set action to first character of i	set config_name to text 2 thru -1 of i		if query = "" or (offset of query in config_name) ≠ 0 then		if action is equal to "0" then			-- ipsec			tell application "System Events"				tell current location of network preferences										set VPNservice to service config_name					set isConnected to connected of current configuration of VPNservice					if isConnected then						set xml_item to xml_output's ¬							create_item({arg:"00" &amp; config_name, uid:config_name, autocomplete:config_name ¬								} ¬								)						xml_item's create_title(config_name &amp; ": connected")						xml_item's create_subtitle("activate to disconnect", missing value)					else						set xml_item to xml_output's ¬							create_item({arg:"01" &amp; config_name, uid:config_name, autocomplete:config_name ¬								} ¬								)						xml_item's create_title(config_name &amp; ": disconnected")						xml_item's create_subtitle("activate to connect", missing value)					end if				end tell			end tell		else if action is equal to "1" then			-- tunnelblick 			tell application "Tunnelblick"				set config_state to (get state of first configuration where name = config_name)				if config_state is equal to "EXITING" then					set xml_item to xml_output's ¬						create_item({arg:"11" &amp; config_name, uid:config_name, autocomplete:config_name ¬							} ¬							)					xml_item's create_title(config_name &amp; ": disconnected")					xml_item's create_subtitle("activate to connect", missing value)									else if config_state is equal to "CONNECTED" then					set xml_item to xml_output's ¬						create_item({arg:"10" &amp; config_name, uid:config_name, autocomplete:config_name ¬							} ¬							)					xml_item's create_title(config_name &amp; ": connected")					xml_item's create_subtitle("activate to disconnect", missing value)									else					set xml_item to xml_output's ¬						create_item({arg:"10" &amp; config_name, uid:config_name, autocomplete:config_name ¬							} ¬							)					xml_item's create_title(config_name &amp; ": connecting")					xml_item's create_subtitle("activate to disconnect", missing value)				end if			end tell		end if		xml_item's create_icon("icon.png", missing value)	end ifend repeatif xml_output's total_item_count() is 0 then	set xml_item to xml_output's create_item({valid:false})	xml_item's create_title("Search did not match any connections")	xml_item's create_icon("icon.png", missing value)end ifxml_output's build_xml()</string>
+				<key>scriptargtype</key>
+				<integer>0</integer>
+				<key>scriptfile</key>
+				<string></string>
+				<key>subtext</key>
+				<string>View and toggle connection state</string>
+				<key>title</key>
+				<string>VPN</string>
+				<key>type</key>
+				<integer>6</integer>
+				<key>withspace</key>
+				<true/>
+			</dict>
+			<key>type</key>
+			<string>alfred.workflow.input.scriptfilter</string>
+			<key>uid</key>
+			<string>085D1468-49F0-4886-9D60-CCD637EB4012</string>
+			<key>version</key>
+			<integer>2</integer>
+		</dict>
+	</array>
+	<key>readme</key>
+	<string></string>
+	<key>uidata</key>
+	<dict>
+		<key>085D1468-49F0-4886-9D60-CCD637EB4012</key>
+		<dict>
+			<key>xpos</key>
+			<integer>160</integer>
+			<key>ypos</key>
+			<integer>90</integer>
+		</dict>
+		<key>57172F40-D365-40D7-B7FD-48C6887C1C09</key>
+		<dict>
+			<key>xpos</key>
+			<integer>450</integer>
+			<key>ypos</key>
+			<integer>90</integer>
+		</dict>
+	</dict>
+	<key>webaddress</key>
+	<string></string>
+</dict>
+</plist>

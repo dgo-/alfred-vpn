@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>bundleid</key>
-	<string>com.dgo.alfred.vpn-toggle</string>
+	<string>com.dgo.alfred.vpn-control</string>
 	<key>category</key>
 	<string>Tools</string>
 	<key>connections</key>
@@ -120,6 +120,6 @@
 		</dict>
 	</dict>
 	<key>webaddress</key>
-	<string></string>
+	<string>https://github.com/dgo-/alfred-vpn</string>
 </dict>
 </plist>
